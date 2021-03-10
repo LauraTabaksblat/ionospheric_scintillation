@@ -1,2 +1,64 @@
-print("hello world")
+#print("Hello world")
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.interpolate
+#new_list = []
+# day = np.zeros(30)
+
+x_pos_1 = []
+y_pos_1 = []
+z_pos_1 = []
+pos_write = open("position day 1.txt","a") #create new files if they do not exist yet
+time_write = open("time day 1.txt","a")
+x_pos = open("x position day 1.txt","a")
+y_pos = open("y position day 1.txt","a")
+z_pos = open("z position day 1.txt","a")
+
+with open("GO_CONS_SST_PRD_2I_20130901T205944_20130903T025943_0001.IDF") as f: #file you want to read
+    lines = f.readlines()
+        
+    for line in lines:          
+        if line[0]+line[1] == "PL":         #every line that starts with PL
+            x_pos.write(line.split()[1])
+            x_pos.write("\n")
+            y_pos.write(line.split()[2])
+            y_pos.write(" ")
+            z_pos.write(line.split()[3])
+            z_pos.write(" ")
+
+            x_pos_1.append(float(line.split()[1]))
+            y_pos_1.append(float(line.split()[2]))
+            z_pos_1.append(float(line.split()[3]))
+
+
+        if line[0] == "*":                      
+            time_write.write(line)
+
+
+x_pos.close()
+y_pos.close()
+z_pos.close()
+time_write.close()
+pos_write.close()
+f.close()
+x_pos_2 = []
+time = []
+for i in range (8640):
+    x_pos_2.append(x_pos_1[i])
+    time.append(i*10)
+
+plt.plot(time,x_pos_2)
+plt.show()
+
+f = scipy.interpolate.interp1d(time, x_pos_2,fill_value = "extrapolate")
+
+#f = scipy.interpolate.interp1d(time,x_pos_2)
+
+time_new = np.arange(0,86440,1)
+x_new = f(time_new)
+
+print(f(120))
+
+plt.plot(time,x_pos_2, 'o', time_new,x_new, '-')
+plt.show()
 
