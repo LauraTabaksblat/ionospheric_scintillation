@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 matplotlib.rcParams['agg.path.chunksize'] = 10000
 
-def ResidualReader(filename,n):
+def ResidualReader(filename):
     f = open(filename,"r")
 
     AngLst = []
@@ -29,18 +29,17 @@ def ResidualReader(filename,n):
         RMS = math.sqrt((sum(j*j for j in i))/len(i))
         VeryNewResiLst.append(RMS)
 
-    title = 'Angle,Residual - graph for the ' + filename.split(' ',1)[0] + " receiver antenna at day " + filename.split(' ',1)[1][31:34]
+    return VeryNewResiLst, NewAngLst
 
-    plt.figure(n)
-    plt.scatter(NewAngLst,VeryNewResiLst,s=0.1)
+name = ["nominal","redundant"]
+
+for i in range(2):
+    Resi,Ang = ResidualReader(name[i] + " GOCE GPS residual data\GOCE.13.246_RDOD24hr.res")
+    plt.subplot(2,1,i+1)
+    plt.scatter(Ang,Resi,s=0.1)
     plt.ylabel('Phase Residual (m)')
     plt.xlabel('Receiver Elavation Angle (degree)')
-    plt.title(title)
-
-ResidualReader("nominal GOCE GPS residual data\GOCE.13.246_RDOD24hr.res",1)
-ResidualReader("redundant GOCE GPS residual data\GOCE.13.246_RDOD24hr.res",2)
+    plt.title("GOCE " + name[i] + " receiver phase residual vs elevation angle")
+    
+plt.tight_layout()
 plt.show()
-
-
-
-
