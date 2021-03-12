@@ -4,6 +4,7 @@ import math
 matplotlib.rcParams['agg.path.chunksize'] = 10000
 
 def ResidualReader(filename):
+    print("Performing Data Reading")
     f = open(filename,"r")
 
     AngLst = []
@@ -31,15 +32,25 @@ def ResidualReader(filename):
 
     return VeryNewResiLst, NewAngLst
 
-name = ["nominal","redundant"]
-
-for i in range(2):
-    Resi,Ang = ResidualReader(name[i] + " GOCE GPS residual data\GOCE.13.246_RDOD24hr.res")
-    plt.subplot(2,1,i+1)
-    plt.scatter(Ang,Resi,s=0.1)
-    plt.ylabel('Phase Residual (m)')
-    plt.xlabel('Receiver Elavation Angle (degree)')
-    plt.title("GOCE " + name[i] + " receiver phase residual vs elevation angle")
+def MakeGraph(day):
+    print("Making Image for day " + str(day))
+    name = ["nominal","redundant"]
+    plt.figure()
     
-plt.tight_layout()
-plt.show()
+    for i in range(2):
+        Resi,Ang = ResidualReader(name[i] + " GOCE GPS residual data\GOCE.13." + str(day) + "_RDOD24hr.res")
+        plt.subplot(2,1,i+1)
+        plt.scatter(Ang,Resi,s=0.1)
+        plt.ylabel('Phase Residual (m)')
+        plt.xlabel('Receiver Elavation Angle (degree)')
+        plt.title("GOCE " + name[i] + " receiver phase residual vs elevation angle")
+        plt.xlim(0,90)
+        plt.ylim(0,0.02)
+        plt.grid()
+
+    plt.tight_layout()
+    plt.savefig("Residual GPS data graphs\Residuals day " + str(day) + ".png")
+
+
+for i in range(245,274):
+    MakeGraph(i)
