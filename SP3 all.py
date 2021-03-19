@@ -106,7 +106,7 @@ R_equ = 6317
 def longitude(x,y):
     lgtude = []
     for i in range(len(x)):
-        lda = math.degrees(math.atan(y[i]/x[i]))
+        lda = math.degrees(math.atan2(y[i],x[i]))
         lgtude.append(lda)
 
     return lgtude
