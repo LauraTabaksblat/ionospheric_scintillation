@@ -12,22 +12,28 @@ def ResidualReader(filename):
     for i in f:
         Line = str(i)
         
-        Time = Line[11:20].split(":")
+        Time = Line[12:20].split(":")
         print(Time)
-        Time[0] = float(Time[0]) * 3600
-        Time[1] = float(Time[1]) * 60
-        Time[2] = float(Time[2])
-        TimeSec = sum(Time)
+        TimeSec = float(Time[0]) * 3600 + float(Time[1]) * 60 + float(Time[2])
         print(TimeSec) 
     
-        if TimeSec not in TimeLst:
+        if not TimeLst:
             TimeLst.append(TimeSec)
             Resi = float(Line[83:90])
             ResiLst.append([Resi])
-        elif TimeSec in TimeLst:
+        elif TimeSec != TimeLst[-1]:
+            TimeLst.append(TimeSec)
+            Resi = float(Line[83:90])
+            ResiLst.append([Resi])
+        else:
             Resi = float(Line[83:90])
             ResiLst[TimeLst.index(TimeSec)].append(Resi)
 
-    return ResiLst, TimeLst
+    NewResiLst = []
+    for i in ResiLst:
+        RMS = math.sqrt((sum(j*j for j in i))/len(i))
+        NewResiLst.append(RMS)
+
+    return NewResiLst, TimeLst
     
 print(ResidualReader("nominal GOCE GPS residual data\GOCE.13.245_RDOD24hr.res"))
