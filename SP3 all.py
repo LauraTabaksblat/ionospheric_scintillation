@@ -102,7 +102,7 @@ plot_iteration()
 #Longitude : 162.65889   deg E             36.341365
 #Height    : 228073.4   m                  227677.297 m
 
-R_equ = 6317
+R_equ = 6371
 def longitude(x,y):
     lgtude = []
     for i in range(len(x)):
