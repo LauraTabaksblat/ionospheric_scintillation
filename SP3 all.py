@@ -154,7 +154,7 @@ fig, ax = plt.subplots()
 ax.imshow(img, extent=[-180, 180, -90, 90]) #Scale figure to comply with our coordinates, so longtiude from -180 to 180 and latitude from -90 to 90
 
 #Plot groundtrack
-plt.plot(longitude(x_pos(), y_pos()), latitude(x_pos(), y_pos(), z_pos()), '.' ,'r')
+plt.plot(longitude(x_pos, y_pos), latitude(x_pos, y_pos, z_pos), '.' ,'r')
 plt.title("Ground Track GOCE 1 day")
 plt.xlabel("Longitude(deg)")
 plt.ylabel("Latitude (deg)")
