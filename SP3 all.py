@@ -149,7 +149,9 @@ write_latlong(lg,lt,ht)
 
 print("done")
 
-
+img = plt.imread("D:\\Downloads\\EarthMapping") #Just the map where image of Earth is stored.
+fig, ax = plt.subplots()
+ax.imshow(img, extent=[-180, 180, -90, 90]) #Scale figure to comply with our coordinates, so longtiude from -180 to 180 and latitude from -90 to 90
 
 #from mpl_toolkits.mplot3d import Axes3D as ax  #
 #fig = plt.figure()
