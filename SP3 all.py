@@ -153,6 +153,17 @@ img = plt.imread("D:\\Downloads\\EarthMapping") #Just the map where image of Ear
 fig, ax = plt.subplots()
 ax.imshow(img, extent=[-180, 180, -90, 90]) #Scale figure to comply with our coordinates, so longtiude from -180 to 180 and latitude from -90 to 90
 
+
+plt.plot(longitude(x_pos(), y_pos()), latitude(x_pos(), y_pos(), z_pos()), '.' ,'r')
+plt.title("Ground Track GOCE 1 day")
+plt.xlabel("Longitude(deg)")
+plt.ylabel("Latitude (deg)")
+plt.ylim(-90,90)
+plt.xlim(-180,180)
+#plt.grid(False)
+plt.show()
+
+
 #from mpl_toolkits.mplot3d import Axes3D as ax  #
 #fig = plt.figure()
 #axi = fig.gca(projection = '3d')
