@@ -3,22 +3,24 @@ import matplotlib.pyplot as plt
 import scipy.interpolate
 import math
 import os
+import pickle
+import matplotlib.cm as cm
+from matplotlib.colors import LogNorm
 
 
 #functions
-def reading_pos(p):
+def reading_pos(p,day):
     
     for root,dirs,files in os.walk(p):
-        for file in files:
-            if file.endswith(".IDF"):
+            if files[day-2].endswith(".IDF"):
             
-                with open(os.path.join(root, file), 'r') as f:
+                with open(os.path.join(root, files[day-2]), 'r') as f:
             
                     lines = f.readlines()
                     i=0
                     for line in lines:
                         
-                        if i<=1:
+                        if i == 1:
                             if line[0]+line[1] == "PL":
                                 x_pos.append(float(line.split()[1]))
                                 y_pos.append(float(line.split()[2]))
@@ -26,7 +28,7 @@ def reading_pos(p):
                                 
                                 
                         if line[0] == '*': #where the measurement should start and stop(HOUR, MINUTE, SECOND)
-                            if line.split()[4] == '21' and line.split()[5]=='0' and line.split()[6]=='0.00000000': 
+                            if (line.split()[3] == str(day) and line.split()[4] == '0' and line.split()[5]=='0' and line.split()[6]=='0.00000000') or (line.split()[3] == str(day+1) and line.split()[4] == '0' and line.split()[5]=='0' and line.split()[6]=='0.00000000') : 
                                 i=i+1
                                 
 
@@ -39,7 +41,7 @@ def inter_linear(meas_num, pos):
         time.append(j*10)
 
     f = scipy.interpolate.interp1d(time, pos,fill_value = "extrapolate")
-    time_new = np.arange(0,2505600,1)
+    time_new = np.arange(0,meas_num*10,1)
     pos_new = f(time_new)
     return pos_new , time_new, time
 
@@ -66,20 +68,25 @@ def plot_iteration():
 x_pos=[]
 y_pos=[]
 z_pos=[]
+
+
+
 path = r"C:\Users\Stefi\Desktop\Data\GOCE precise science orbit"
 
 #main
-reading_pos(path)
+#print("What day you want to measure",'\n')
+#d = int(input())
+#reading_pos(path,d)
 
 
-[x_new,time_new,time] = inter_linear(250560,x_pos) 
+#[x_new,time_new,time] = inter_linear(8640,x_pos) 
 
-y_new = inter_linear(250560,y_pos)[0]
+#y_new = inter_linear(8640,y_pos)[0]
 
-z_new = inter_linear(250560,z_pos)[0]
+#z_new = inter_linear(8640,z_pos)[0]
 
 
-plot_iteration()
+#plot_iteration()
 
 #
 #
@@ -102,7 +109,7 @@ plot_iteration()
 #Longitude : 162.65889   deg E             36.341365
 #Height    : 228073.4   m                  227677.297 m
 
-R_equ = 6371
+R_equ = 6378
 def longitude(x,y):
     lgtude = []
     for i in range(len(x)):
@@ -138,30 +145,123 @@ def latlong(time):#give the number of seconds you want to get out the lat/long p
         z_test.append(z_new[i])
     return longitude(x_test,y_test) , latitude (x_test,y_test,z_test) , height (x_test,y_test,z_test)
 
-[lg,lt,ht] =latlong(86400)
+#t = 86400
+#[lg,lt,ht] = latlong(t)
 
-def write_latlong(a,b,c):
+def write_latlong(a,b,c,time):
 
-    LLH = open("LLH.txt","a")
-    for i in range(86400):
-        LLH.write(str(a[i]) + ' ' + str(b[i]) + ' ' + str(c[i]) + '\n')
-write_latlong(lg,lt,ht)
+    LLH = open("LLH.txt","w")
+    LLH.write("Longitude" +'    ' +  "Latitude" +'    ' + "Height" +'    ' + "Second" + '\n' )
+    for i in range(time):
+        LLH.write(str(a[i]) + ' ' + str(b[i]) + ' ' + str(c[i]) + ' ' + str(i) + '\n' )
+#write_latlong(lg,lt,ht,t)
 
+
+
+
+#[['13', '9', '2', '0', '7', '48.6080000'], [lg, lt, ht]]
+
+result = []
+for i in range(2,30):#0 to 28
+    x_pos=[]
+    y_pos=[]
+    z_pos=[]
+
+    reading_pos(path, i)
+
+    [x_new,time_new,time] = inter_linear(8640,x_pos) #from here
+
+    y_new = inter_linear(8640,y_pos)[0]
+
+    z_new = inter_linear(8640,z_pos)[0]  #to here, it's just the interpolation
+    
+    [lg,lt,ht] = latlong(86400) #this will compute 3 lists
+    hour = 0
+    second = 0
+    minute = 0
+    for j in range(86400):
+
+        flag = ['13' , '9' , i , hour , minute, second ]
+        second = second + 1
+        if second == 60 :
+            second = 0
+            minute = minute + 1
+        if minute == 60:
+            hour = hour +1
+            minute = 0
+        result.append(([flag,[lg[j],lt[j],ht[j]]]))
+
+
+with open("time_list.txt", "rb") as fp:
+    time_listread = pickle.load(fp)
+
+loss_location_lst = []
+unfound_lst = []
+
+for loss in time_listread:
+    timestamp = int(loss[0][2])*24*60*60 + int(loss[0][3])*60*60 + int(loss[0][4])*60 + int(float(loss[0][5]))
+    
+    if int(loss[0][2]) == int(result[timestamp][0][2]) and int(loss[0][3]) == int(result[timestamp][0][3]) and int(loss[0][4]) == int(result[timestamp][0][4]) and int(float(loss[0][5])) == int(float(result[timestamp][0][5])):
+            
+        loss_location_lst.append([result[timestamp][1],loss[1]])
+    else:
+        unfound_lst.append(timestamp)        
+
+#print(unfound_lst)
+
+
+
+#[0]= -180
+#long +180
+#lat + 90
+
+coord_list = np.zeros([360,180], dtype = int) #360 rows , 180 cols
+
+for loss in loss_location_lst:
+    coord_list[int(loss[0][0])+180][int(loss[0][1]+90)] +=1
+
+#print(coord_list)
+    
+img = plt.imread("EarthMapping.png")
+fig, ax = plt.subplots()
+ax.imshow(img, extent=[0, 360, 0, 180])        
+
+cmaps = ['Greys']
+longit = []
+lat = []
+multitude = []
+
+C=[]
+for i in range(0,360):
+    for j in range(0,180):
+        C.append(coord_list[i][j])
+        if coord_list[i][j] != 0:
+            
+            longit.append(i)
+            lat.append(j)
+            multitude.append(coord_list[i][j])
+            
+plt.scatter( longit , lat , c = multitude, marker =',' ,cmap='Reds' )
 print("done")
 
-img = plt.imread("D:\\Downloads\\EarthMapping") #Just the map where image of Earth is stored.
-fig, ax = plt.subplots()
-ax.imshow(img, extent=[-180, 180, -90, 90]) #Scale figure to comply with our coordinates, so longtiude from -180 to 180 and latitude from -90 to 90
-
-#Plot groundtrack
-plt.plot(longitude(x_pos, y_pos), latitude(x_pos, y_pos, z_pos), '.' ,'r')
-plt.title("Ground Track GOCE 1 day")
-plt.xlabel("Longitude(deg)")
-plt.ylabel("Latitude (deg)")
-plt.ylim(-90,90)
-plt.xlim(-180,180)
-#plt.grid(False)
+#plt.colorbar()
+            
 plt.show()
+
+
+#cmaps['Sequential'] = ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds','YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu','GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn']
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #from mpl_toolkits.mplot3d import Axes3D as ax  #
@@ -170,6 +270,8 @@ plt.show()
 #axi.plot(x_test,y_test,z_test)
 #plt.show()
 
+
+#
 
 
 
