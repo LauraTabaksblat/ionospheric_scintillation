@@ -24,27 +24,37 @@ def ResidualReader(filename):
     return ResiLst
 
 #READ GPS LOCATION
-def Reading2(filename,filename2):
+def Reading2(filename,filename2,day):
     #filename = a txt file with 4 columns (longitude, latitude, altitude, time)
     f = open(filename,"r")
-
+    lines = f.readlines()
+    del lines[0]
     #make a list of lists: [long, lat, alt, time]
-    CoordLst = [[float(x) for x in str(i).split()] for i in f]
-
+    CoordLst = [[float(x) for x in str(i).split()] for i in lines]
     ResiLst = ResidualReader(filename2)
-    
-    b = 3
 
+    for i in CoordLst:
+        i[3] += day
+    for i in ResiLst:
+        i[0] += day
+
+    b = 0
     for i in range(len(ResiLst)):
+
         #if the time of a a ResiLst couple [time, resi] equals the time of a coordinate --> add the residual to the coordlst; [long, lat, alt, time, resi]
-        if ResiLst[i][0] == CoordLst[b-1][3]:
-            CoordLst[b-1].append(ResiLst[i][1])
-
-        #if the time is not equal, go to next CoordLst element and append the residual there
-        else:
+        while ResiLst[i][0] != CoordLst[b][3]:
             b += 1
-            CoordLst[b-1].append(ResiLst[i][1])
+        CoordLst[b].append(ResiLst[i][1])
 
+    return CoordLst
+
+def CombineFiles():
+    CoordLst = []
+    day = 86400
+    for i in range(2,31):
+        PartLst = Reading2("Orbit Data\Write_LLH" + str(i) + ".txt","nominal GOCE GPS residual data\GOCE.13." + str(i + 243) +"_RDOD24hr.res",int(day * (i-2)))
+        CoordLst += PartLst
+    
     return CoordLst
 
 #function to convert longitude and latitude into bins (starting bin is top left corner, 
@@ -52,18 +62,21 @@ def Reading2(filename,filename2):
 def BinMaker(CoordLst):
 
     #make list of empty lists:
-    #72 columns, 36 rows
-    BinRow = [ [] for i in range(72)]
-    Bins = [ BinRow for i in range(36)]
+    #360 columns, 180 rows
+    Bins = [ [ [] for i in range(360)] for i in range(180)]
 
-    #go from -90 -- 90 to 0 - 36
-    #go from -180 -- 180 to 0-72
+    #go from -90 -- 90 to 0 - 180
+    #go from -180 -- 180 to 0 - 360
     #bin residuals in right bin
+
     for i in CoordLst:
-        Long = math.floor((i[0] / 5)) + 36
-        Lat = 18 - math.floor((i[1] / 5))
-        Bins[Lat][Long].extend(i[4:])
+        Long = math.floor(i[0]) + 180
+        Lat = math.floor(i[1]) + 90
+        Bins[Lat][Long] += i[4:]
     
+    #print(Bins[0][0])
+    #print(Bins[1][0])
+
     #take rms of residuals in each bin
     for row in Bins:
         for col in row:
@@ -77,22 +90,20 @@ def BinMaker(CoordLst):
     return Bins
 
 def MakeImg(Bins):
-    C = []
     longit = []
     lat = []
     multitude = []
-    for i in range(36):
-        for j in range(72):
-            C.append(Bins[i][j][0])
-            if Bins[i][j][0] != 0:
-                longit.append(i)
-                lat.append(j)
-                multitude.append(Bins[i][j][0])
-    plt.xlim(0,72)
-    plt.ylim(0,36)
+    for i in range(180):
+        for j in range(360):
+            longit.append(i)
+            lat.append(j)
+            multitude.append(Bins[i][j][0])
+    plt.xlim(0,360)
+    plt.ylim(0,180)
     plt.scatter(lat, longit, c=multitude, marker=',', cmap='Reds')
     return plt.show()
 
-Bins = BinMaker((Reading2("Orbit Data\LLH2.txt","nominal GOCE GPS residual data\GOCE.13.245_RDOD24hr.res")))
+#CoordLst = Reading2("Orbit Data\Write_LLH2.txt","nominal GOCE GPS residual data\GOCE.13.245_RDOD24hr.res")
+Bins = BinMaker(CombineFiles())
 #print(Bins)
 MakeImg(Bins)
